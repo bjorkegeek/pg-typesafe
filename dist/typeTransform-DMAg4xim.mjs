@@ -49,8 +49,8 @@ const types = {
 		field: "boolean[]"
 	},
 	1001: {
-		parameter: "string[]",
-		field: "string[]"
+		parameter: "Buffer[]",
+		field: "Buffer[]"
 	},
 	1005: {
 		parameter: "number[]",
@@ -117,8 +117,8 @@ const types = {
 		field: "Date[]"
 	},
 	17: {
-		parameter: "string",
-		field: "string"
+		parameter: "Buffer",
+		field: "Buffer"
 	},
 	114: {
 		parameter: "string",
@@ -139,6 +139,10 @@ const types = {
 	3907: {
 		parameter: "string[]",
 		field: "string[]"
+	},
+	2950: {
+		parameter: "string",
+		field: "string"
 	},
 	2951: {
 		parameter: "string[]",

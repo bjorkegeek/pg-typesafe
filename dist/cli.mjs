@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { n as defaultTransformParameter, t as defaultTransformField } from "./typeTransform-w8GmSwgY.mjs";
+import { n as defaultTransformParameter, t as defaultTransformField } from "./typeTransform-DMAg4xim.mjs";
 import assert from "node:assert";
 import { existsSync } from "node:fs";
 import { writeFile } from "node:fs/promises";
@@ -170,7 +170,8 @@ const readConfig = async () => {
 		tsConfigFile: args.tsConfigFile ?? config?.tsConfigFile ?? "tsconfig.json",
 		transformParameter: config?.transformParameter ?? defaultTransformParameter,
 		transformField: config?.transformField ?? defaultTransformField,
-		ignoreFiles: config.ignoreFiles ?? []
+		ignoreFiles: config.ignoreFiles ?? [],
+		hardAnalyzeFail: config.hardAnalyzeFail ?? false
 	};
 };
 const config = await readConfig();
@@ -182,6 +183,7 @@ if (!existsSync(defFile)) {
 	project.resolveSourceFileDependencies();
 }
 const queries = [];
+const resolvedDefFile = resolve(defFile);
 project.getSourceFiles().forEach((file) => {
 	const relativePath = relative(".", file.getFilePath());
 	if (relativePath.split("/").some((part) => config.ignoreFiles.includes(part))) return;
@@ -197,6 +199,12 @@ project.getSourceFiles().forEach((file) => {
 				msg(loc, "notice", `call of ${propAccess.getExpression().getText()}.name is not of type TypesafeQueryFn`, `If this call is a database call, type ${propAccess.getExpression().getText()} as TypesafePool, TypesafeClient or TypesafeQuerier`);
 				return;
 			}
+			const declarationFile = type.getAliasSymbol()?.getDeclarations()[0]?.getSourceFile().getFilePath();
+			if (!declarationFile) {
+				msg(loc, "warning", "could not get definition file");
+				return;
+			}
+			if (resolve(declarationFile) !== resolvedDefFile) return;
 			const arg = call.getArguments().at(0);
 			if (!arg) {
 				msg(loc, "warning", "call has no arguments");
@@ -229,6 +237,7 @@ const pushImports = (imports) => {
 	});
 };
 const qMap = /* @__PURE__ */ new Map();
+let analyzeFailures = 0;
 for (const q of queries) try {
 	const analyzed = await analyzeQuery(client, q.query);
 	if (analyzed === null) qMap.set(q.query, {
@@ -255,9 +264,14 @@ for (const q of queries) try {
 		});
 	}
 } catch (error) {
-	msg(q.loc, "warning", "analyzing this query failed", inspect(error));
+	if (config.hardAnalyzeFail) analyzeFailures++;
+	msg(q.loc, config.hardAnalyzeFail ? "error" : "warning", "analyzing this query failed", inspect(error));
 }
 await client.end();
+if (analyzeFailures > 0) {
+	console.log(`error: ${analyzeFailures} ${analyzeFailures === 1 ? "query" : "queries"} could not be analyzed. ${defFile} was not updated.`);
+	process.exit(1);
+}
 await writeFile(defFile, [
 	impMap.entries().map(([path, names]) => `import type { ${names.join(", ")} } from '${path}';`).toArray().join("\n"),
 	head,

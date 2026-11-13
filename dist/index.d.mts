@@ -39,6 +39,11 @@ interface PgTypesafeConfig {
   ignoreFiles?: string[];
   transformParameter?: TransformParameterFn;
   transformField?: TransformFieldFn;
+  /**
+   * If true, pg-typesafe will fail if it can't analyze a query.
+   * If false (default) pg-typesafe will emit a warning and continue.
+   */
+  hardAnalyzeFail?: boolean;
 }
 declare const defineConfig: (config: PgTypesafeConfig) => PgTypesafeConfig;
 //#endregion

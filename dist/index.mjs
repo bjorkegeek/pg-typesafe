@@ -1,4 +1,4 @@
-import { n as defaultTransformParameter, t as defaultTransformField } from "./typeTransform-w8GmSwgY.mjs";
+import { n as defaultTransformParameter, t as defaultTransformField } from "./typeTransform-DMAg4xim.mjs";
 //#region src/index.ts
 const defineConfig = (config) => config;
 //#endregion
